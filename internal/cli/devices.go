@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/asurve/swiftctl/internal/device"
 	"github.com/asurve/swiftctl/internal/ui"
@@ -14,12 +16,16 @@ func devicesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "devices",
 		Short: "Manage simulators and devices",
-		Long:  `List, boot, and shutdown iOS/macOS simulators.`,
+		Long:  `List, boot, shutdown, and create iOS/macOS simulators.`,
 	}
 
 	cmd.AddCommand(devicesListCmd())
 	cmd.AddCommand(devicesBootCmd())
 	cmd.AddCommand(devicesShutdownCmd())
+	cmd.AddCommand(devicesCreateCmd())
+	cmd.AddCommand(devicesDeleteCmd())
+	cmd.AddCommand(devicesTypesCmd())
+	cmd.AddCommand(devicesRuntimesCmd())
 
 	return cmd
 }
@@ -149,4 +155,166 @@ func devicesShutdownCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func devicesCreateCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "create <name> <device-type> <runtime>",
+		Short: "Create a new simulator",
+		Example: `  swiftctl devices create "My iPhone" "iPhone 15 Pro" "iOS 17.0"
+  swiftctl devices create "Test Phone" com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro com.apple.CoreSimulator.SimRuntime.iOS-17-0`,
+		Args: cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			mgr := device.NewManager()
+			renderer := ui.NewRenderer()
+
+			name, deviceType, runtime := args[0], args[1], args[2]
+
+			deviceTypeID, err := resolveDeviceType(ctx, mgr, deviceType)
+			if err != nil {
+				return err
+			}
+
+			runtimeID, err := resolveRuntime(ctx, mgr, runtime)
+			if err != nil {
+				return err
+			}
+
+			renderer.StartSpinner("Creating %s...", name)
+			udid, err := mgr.Create(ctx, name, deviceTypeID, runtimeID)
+			if err != nil {
+				renderer.StopSpinner(false)
+				return fmt.Errorf("failed to create: %w", err)
+			}
+
+			renderer.StopSpinner(true)
+			renderer.Success("Created %s (%s)", name, udid)
+			return nil
+		},
+	}
+}
+
+func devicesDeleteCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete <device>",
+		Short: "Delete a simulator",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			mgr := device.NewManager()
+			renderer := ui.NewRenderer()
+
+			dev, err := mgr.Get(ctx, args[0])
+			if err != nil {
+				return fmt.Errorf("device not found: %w", err)
+			}
+
+			renderer.StartSpinner("Deleting %s...", dev.Name)
+			if err := mgr.Delete(ctx, dev); err != nil {
+				renderer.StopSpinner(false)
+				return fmt.Errorf("failed to delete: %w", err)
+			}
+
+			renderer.StopSpinner(true)
+			renderer.Success("Deleted %s", dev.Name)
+			return nil
+		},
+	}
+}
+
+func devicesTypesCmd() *cobra.Command {
+	var platform string
+
+	cmd := &cobra.Command{
+		Use:   "types",
+		Short: "List available device types",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			mgr := device.NewManager()
+
+			types, err := mgr.ListDeviceTypes(ctx)
+			if err != nil {
+				return err
+			}
+
+			for _, t := range types {
+				if platform != "" && string(t.Platform) != platform {
+					continue
+				}
+				fmt.Printf("%-40s %s\n", t.Name, t.Identifier)
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&platform, "platform", "p", "", "Filter by platform")
+	return cmd
+}
+
+func devicesRuntimesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "runtimes",
+		Short: "List available runtimes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			mgr := device.NewManager()
+
+			runtimes, err := mgr.ListRuntimes(ctx)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range runtimes {
+				status := ""
+				if !r.IsAvailable {
+					status = " (unavailable)"
+				}
+				fmt.Printf("%-20s %s%s\n", r.Name, r.Identifier, status)
+			}
+			return nil
+		},
+	}
+	return cmd
+}
+
+func resolveDeviceType(ctx context.Context, mgr *device.Manager, input string) (string, error) {
+	if strings.HasPrefix(input, "com.apple.") {
+		return input, nil
+	}
+
+	types, err := mgr.ListDeviceTypes(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	input = strings.ToLower(input)
+	for _, t := range types {
+		if strings.ToLower(t.Name) == input || strings.Contains(strings.ToLower(t.Name), input) {
+			return t.Identifier, nil
+		}
+	}
+	return "", fmt.Errorf("device type not found: %s", input)
+}
+
+func resolveRuntime(ctx context.Context, mgr *device.Manager, input string) (string, error) {
+	if strings.HasPrefix(input, "com.apple.") {
+		return input, nil
+	}
+
+	runtimes, err := mgr.ListRuntimes(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	input = strings.ToLower(input)
+	for _, r := range runtimes {
+		if !r.IsAvailable {
+			continue
+		}
+		if strings.ToLower(r.Name) == input || strings.Contains(strings.ToLower(r.Name), input) {
+			return r.Identifier, nil
+		}
+	}
+	return "", fmt.Errorf("runtime not found: %s", input)
 }

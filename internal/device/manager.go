@@ -157,6 +157,90 @@ func (m *Manager) Terminate(ctx context.Context, device *Device, bundleID string
 	return nil
 }
 
+func (m *Manager) Delete(ctx context.Context, device *Device) error {
+	_, err := m.runner.RunSilent(ctx, "xcrun", []string{"simctl", "delete", device.UDID})
+	return err
+}
+
+type DeviceTypeInfo struct {
+	Identifier string
+	Name       string
+	Platform   Platform
+}
+
+type RuntimeInfo struct {
+	Identifier string
+	Name       string
+	Version    string
+	Platform   Platform
+	IsAvailable bool
+}
+
+func (m *Manager) ListDeviceTypes(ctx context.Context) ([]DeviceTypeInfo, error) {
+	output, err := m.runner.RunSilent(ctx, "xcrun", []string{"simctl", "list", "devicetypes", "-j"})
+	if err != nil {
+		return nil, err
+	}
+
+	var types []DeviceTypeInfo
+	gjson.ParseBytes(output).Get("devicetypes").ForEach(func(_, dt gjson.Result) bool {
+		id := dt.Get("identifier").String()
+		types = append(types, DeviceTypeInfo{
+			Identifier: id,
+			Name:       dt.Get("name").String(),
+			Platform:   platformFromIdentifier(id),
+		})
+		return true
+	})
+	return types, nil
+}
+
+func (m *Manager) ListRuntimes(ctx context.Context) ([]RuntimeInfo, error) {
+	output, err := m.runner.RunSilent(ctx, "xcrun", []string{"simctl", "list", "runtimes", "-j"})
+	if err != nil {
+		return nil, err
+	}
+
+	var runtimes []RuntimeInfo
+	gjson.ParseBytes(output).Get("runtimes").ForEach(func(_, rt gjson.Result) bool {
+		id := rt.Get("identifier").String()
+		plat, version := parseRuntime(id)
+		runtimes = append(runtimes, RuntimeInfo{
+			Identifier:  id,
+			Name:        rt.Get("name").String(),
+			Version:     version,
+			Platform:    plat,
+			IsAvailable: rt.Get("isAvailable").Bool(),
+		})
+		return true
+	})
+	return runtimes, nil
+}
+
+func (m *Manager) Create(ctx context.Context, name, deviceTypeID, runtimeID string) (string, error) {
+	output, err := m.runner.RunSilent(ctx, "xcrun", []string{"simctl", "create", name, deviceTypeID, runtimeID})
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func platformFromIdentifier(id string) Platform {
+	id = strings.ToLower(id)
+	switch {
+	case strings.Contains(id, "iphone"), strings.Contains(id, "ipad"):
+		return PlatformIOS
+	case strings.Contains(id, "watch"):
+		return PlatformWatchOS
+	case strings.Contains(id, "tv"):
+		return PlatformTVOS
+	case strings.Contains(id, "vision"):
+		return PlatformVisionOS
+	default:
+		return Platform("unknown")
+	}
+}
+
 func parseRuntime(runtime string) (Platform, string) {
 	runtime = strings.ToLower(runtime)
 
