@@ -1,12 +1,13 @@
 # swiftctl
 
-A command-line tool for Swift development on macOS. Written in Go.
+A CLI toolkit for Swift development on macOS.
 
 ## What it does
 
 - Detects Xcode projects, workspaces, and Swift packages
-- Lists, boots, and shuts down iOS/macOS/watchOS/tvOS/visionOS simulators
-- Builds projects via xcodebuild
+- Builds, deploys, launches, and streams logs from apps
+- Manages iOS/macOS/watchOS/tvOS/visionOS simulators
+- Watches for file changes and automatically rebuilds
 
 ## Requirements
 
@@ -30,26 +31,16 @@ INSTALL_DIR=~/bin ./install.sh
 
 ## Usage
 
-### List simulators
+### Run an app
+
+Build, deploy to simulator, launch, and stream logs:
 
 ```bash
-swiftctl devices list
-swiftctl devices list --platform ios
-swiftctl devices list --booted
-swiftctl devices list --json
-```
-
-### Boot a simulator
-
-```bash
-swiftctl devices boot "iPhone 15 Pro"
-```
-
-### Shut down simulators
-
-```bash
-swiftctl devices shutdown "iPhone 15 Pro"
-swiftctl devices shutdown all
+swiftctl run ios
+swiftctl run ios -w                        # Watch mode: rebuild on file changes
+swiftctl run ios -s MyScheme               # Specify scheme
+swiftctl run ios -d "iPhone 15 Pro"        # Specify device
+swiftctl run ios -c release                # Release configuration
 ```
 
 ### Build a project
@@ -59,6 +50,38 @@ swiftctl build
 swiftctl build --scheme MyApp
 swiftctl build --scheme MyApp --configuration release
 swiftctl build --clean
+```
+
+### List simulators
+
+```bash
+swiftctl devices list
+swiftctl devices list --platform ios
+swiftctl devices list --booted
+swiftctl devices list --json
+```
+
+### Boot and shutdown simulators
+
+```bash
+swiftctl devices boot "iPhone 15 Pro"
+swiftctl devices shutdown "iPhone 15 Pro"
+swiftctl devices shutdown all
+```
+
+### Create and delete simulators
+
+```bash
+swiftctl devices create "My iPhone" "iPhone 15 Pro" "iOS 17.0"
+swiftctl devices delete "My iPhone"
+```
+
+### List available device types and runtimes
+
+```bash
+swiftctl devices types
+swiftctl devices types --platform ios
+swiftctl devices runtimes
 ```
 
 ### View project info
