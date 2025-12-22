@@ -32,7 +32,6 @@ Common workflows:
 func Execute(ctx context.Context, version string) error {
 	rootCmd.Version = version
 
-	// Add subcommands
 	rootCmd.AddCommand(devicesCmd())
 	rootCmd.AddCommand(buildCmd())
 	rootCmd.AddCommand(projectCmd())
@@ -40,7 +39,4 @@ func Execute(ctx context.Context, version string) error {
 	return rootCmd.ExecuteContext(ctx)
 }
 
-// Verbose returns whether verbose mode is enabled
-func Verbose() bool {
-	return verbose
-}
+func Verbose() bool { return verbose }

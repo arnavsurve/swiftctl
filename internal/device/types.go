@@ -40,9 +40,3 @@ type Device struct {
 	IsAvailable bool        `json:"is_available"`
 }
 
-// Implement DisplayDevice interface for UI rendering
-func (d *Device) GetName() string      { return d.Name }
-func (d *Device) GetUDID() string      { return d.UDID }
-func (d *Device) GetState() string     { return string(d.State) }
-func (d *Device) GetOSVersion() string { return d.OSVersion }
-func (d *Device) GetPlatform() string  { return string(d.Platform) }

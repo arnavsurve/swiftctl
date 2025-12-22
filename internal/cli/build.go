@@ -33,7 +33,6 @@ func buildCmd() *cobra.Command {
 			ctx := cmd.Context()
 			renderer := ui.NewRenderer()
 
-			// Detect project
 			detector := project.NewDetector()
 			proj, err := detector.Detect(".")
 			if err != nil {
@@ -42,13 +41,11 @@ func buildCmd() *cobra.Command {
 
 			builder := build.NewBuilder(proj)
 
-			// Build config
 			cfg := build.Config{
 				Scheme:      scheme,
 				Destination: destination,
 			}
 
-			// Configuration
 			switch config {
 			case "release", "Release":
 				cfg.Configuration = build.ConfigRelease
@@ -56,14 +53,12 @@ func buildCmd() *cobra.Command {
 				cfg.Configuration = build.ConfigDebug
 			}
 
-			// Platform
 			if platform != "" {
 				cfg.Platform = device.Platform(platform)
 			} else if len(proj.Platforms) > 0 {
 				cfg.Platform = proj.Platforms[0]
 			}
 
-			// Clean first if requested
 			if clean {
 				renderer.StartSpinner("Cleaning...")
 				if err := builder.Clean(ctx, cfg); err != nil {
@@ -74,7 +69,6 @@ func buildCmd() *cobra.Command {
 				}
 			}
 
-			// Start build
 			schemeName := scheme
 			if schemeName == "" && len(proj.Schemes) > 0 {
 				schemeName = proj.Schemes[0]
@@ -85,11 +79,9 @@ func buildCmd() *cobra.Command {
 
 			renderer.StartSpinner("Building %s...", schemeName)
 
-			// Create events channel
 			events := make(chan build.Event, 100)
 			done := make(chan struct{})
 
-			// Process events in background
 			var lastFile string
 			var warningCount, errorCount int
 
@@ -103,7 +95,6 @@ func buildCmd() *cobra.Command {
 
 					case build.EventWarning:
 						warningCount++
-						// Don't print warnings during build, summarize at end
 
 					case build.EventError:
 						errorCount++
@@ -123,7 +114,6 @@ func buildCmd() *cobra.Command {
 				close(done)
 			}()
 
-			// Run build
 			result, err := builder.Build(ctx, cfg, events)
 			close(events)
 			<-done
@@ -141,7 +131,6 @@ func buildCmd() *cobra.Command {
 				}
 			} else {
 				renderer.Error("Build failed with %d error(s)", errorCount)
-				// Print first few errors
 				for i, e := range result.Errors {
 					if i >= 5 {
 						renderer.Info("... and %d more errors", len(result.Errors)-5)

@@ -53,7 +53,6 @@ func devicesListCmd() *cobra.Command {
 				return enc.Encode(devices)
 			}
 
-			// Convert to UI types
 			displayDevices := make([]ui.DeviceInfo, len(devices))
 			for i, d := range devices {
 				displayDevices[i] = ui.DeviceInfo{
@@ -123,7 +122,6 @@ func devicesShutdownCmd() *cobra.Command {
 			mgr := device.NewManager()
 			renderer := ui.NewRenderer()
 
-			// Shutdown all if no arg or "all"
 			if len(args) == 0 || args[0] == "all" {
 				renderer.StartSpinner("Shutting down all simulators...")
 				if err := mgr.ShutdownAll(ctx); err != nil {
@@ -135,7 +133,6 @@ func devicesShutdownCmd() *cobra.Command {
 				return nil
 			}
 
-			// Shutdown specific device
 			dev, err := mgr.Get(ctx, args[0])
 			if err != nil {
 				return fmt.Errorf("device not found: %w", err)

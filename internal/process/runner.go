@@ -10,29 +10,23 @@ import (
 	"sync"
 )
 
-// OutputLine represents a line of output from a command
 type OutputLine struct {
 	Stream  string // "stdout" or "stderr"
 	Content string
 }
 
-// Runner executes shell commands and manages their output
 type Runner struct {
 	verbose bool
 }
 
-// NewRunner creates a new Runner instance
 func NewRunner() *Runner {
 	return &Runner{}
 }
 
-// SetVerbose enables/disables verbose output
 func (r *Runner) SetVerbose(v bool) {
 	r.verbose = v
 }
 
-// Run executes a command and streams output line by line
-// Returns channels for output lines and a final error
 func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan OutputLine, <-chan error) {
 	outChan := make(chan OutputLine, 100)
 	errChan := make(chan error, 1)
@@ -63,7 +57,6 @@ func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan Ou
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		// Stream stdout
 		go func() {
 			defer wg.Done()
 			scanner := bufio.NewScanner(stdout)
@@ -76,7 +69,6 @@ func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan Ou
 			}
 		}()
 
-		// Stream stderr
 		go func() {
 			defer wg.Done()
 			scanner := bufio.NewScanner(stderr)
@@ -100,7 +92,6 @@ func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan Ou
 	return outChan, errChan
 }
 
-// RunSilent executes a command and returns the combined output
 func (r *Runner) RunSilent(ctx context.Context, name string, args []string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
 
@@ -109,7 +100,6 @@ func (r *Runner) RunSilent(ctx context.Context, name string, args []string) ([]b
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		// Include stderr in error for debugging
 		if stderr.Len() > 0 {
 			return nil, fmt.Errorf("%w: %s", err, stderr.String())
 		}
@@ -119,7 +109,6 @@ func (r *Runner) RunSilent(ctx context.Context, name string, args []string) ([]b
 	return stdout.Bytes(), nil
 }
 
-// RunJSON executes a command and parses the JSON output into v
 func (r *Runner) RunJSON(ctx context.Context, name string, args []string, v any) error {
 	output, err := r.RunSilent(ctx, name, args)
 	if err != nil {
@@ -133,7 +122,6 @@ func (r *Runner) RunJSON(ctx context.Context, name string, args []string, v any)
 	return nil
 }
 
-// CommandExists checks if a command is available on PATH
 func CommandExists(name string) bool {
 	_, err := exec.LookPath(name)
 	return err == nil
