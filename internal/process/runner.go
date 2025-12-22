@@ -6,7 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 	"sync"
 )
 
@@ -15,20 +17,35 @@ type OutputLine struct {
 	Content string
 }
 
+var globalVerbose bool
+
+// SetGlobalVerbose sets verbose mode for all runners.
+func SetGlobalVerbose(v bool) {
+	globalVerbose = v
+}
+
 type Runner struct {
 	verbose bool
 }
 
 func NewRunner() *Runner {
-	return &Runner{}
+	return &Runner{verbose: globalVerbose}
 }
 
 func (r *Runner) SetVerbose(v bool) {
 	r.verbose = v
 }
 
+func (r *Runner) logCommand(name string, args []string) {
+	if r.verbose {
+		fmt.Fprintf(os.Stderr, "  $ %s %s\n", name, strings.Join(args, " "))
+	}
+}
+
 // Run executes a command with streaming output via channels.
 func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan OutputLine, <-chan error) {
+	r.logCommand(name, args)
+
 	outChan := make(chan OutputLine, 100)
 	errChan := make(chan error, 1)
 
@@ -95,6 +112,8 @@ func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan Ou
 
 // RunSilent executes a command and returns stdout. Stderr is included in errors.
 func (r *Runner) RunSilent(ctx context.Context, name string, args []string) ([]byte, error) {
+	r.logCommand(name, args)
+
 	cmd := exec.CommandContext(ctx, name, args...)
 
 	var stdout, stderr bytes.Buffer

@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 
+	"github.com/arnavsurve/swiftctl/internal/process"
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +25,9 @@ Common workflows:
   swiftctl build            Just build the project`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			process.SetGlobalVerbose(verbose)
+		},
 	}
 
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Show underlying commands")
