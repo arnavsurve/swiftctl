@@ -35,6 +35,7 @@ func Execute(ctx context.Context, version string) error {
 	rootCmd.AddCommand(devicesCmd())
 	rootCmd.AddCommand(buildCmd())
 	rootCmd.AddCommand(projectCmd())
+	rootCmd.AddCommand(runCmd())
 
 	return rootCmd.ExecuteContext(ctx)
 }
