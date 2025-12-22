@@ -17,6 +17,7 @@ func runCmd() *cobra.Command {
 		configuration string
 		deviceName    string
 		watch         bool
+		launchArgs    []string
 	)
 
 	cmd := &cobra.Command{
@@ -28,7 +29,8 @@ Use -w/--watch to automatically rebuild and relaunch when source files change.`,
 		Example: `  swiftctl run ios
   swiftctl run ios -w
   swiftctl run ios -s MyScheme -d "iPhone 15 Pro"
-  swiftctl run ios -c release`,
+  swiftctl run ios -c release
+  swiftctl run ios --args="-verbose,-debug"`,
 		Args:      cobra.ExactArgs(1),
 		ValidArgs: []string{"ios", "watchos", "tvos", "visionos"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -59,6 +61,7 @@ Use -w/--watch to automatically rebuild and relaunch when source files change.`,
 				Platform:   platform,
 				DeviceName: deviceName,
 				Watch:      watch,
+				LaunchArgs: launchArgs,
 			}
 
 			switch configuration {
@@ -77,6 +80,7 @@ Use -w/--watch to automatically rebuild and relaunch when source files change.`,
 	cmd.Flags().StringVarP(&configuration, "configuration", "c", "debug", "Build configuration (debug/release)")
 	cmd.Flags().StringVarP(&deviceName, "device", "d", "", "Target device name or UDID")
 	cmd.Flags().BoolVarP(&watch, "watch", "w", false, "Watch for file changes and rebuild")
+	cmd.Flags().StringSliceVar(&launchArgs, "args", nil, "Arguments to pass to the launched app")
 
 	return cmd
 }

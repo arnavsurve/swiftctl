@@ -21,6 +21,7 @@ type Config struct {
 	DeviceName    string
 	Platform      device.Platform
 	Watch         bool
+	LaunchArgs    []string
 }
 
 type Runner struct {
@@ -188,7 +189,7 @@ func (r *Runner) buildCycle(ctx context.Context, cfg Config, dev *device.Device)
 
 	// Launch
 	r.renderer.StartSpinner("Launching...")
-	pid, err := r.deviceManager.Launch(ctx, dev, bundleID, nil)
+	pid, err := r.deviceManager.Launch(ctx, dev, bundleID, cfg.LaunchArgs)
 	if err != nil {
 		r.renderer.StopSpinner(false)
 		return "", "", fmt.Errorf("launch failed: %w", err)
@@ -274,13 +275,10 @@ func (r *Runner) runWithWatch(ctx context.Context, cfg Config, dev *device.Devic
 
 			r.renderer.Info("Changed: %s", filepath.Base(change.Path))
 
-			// Stop log streaming
+			// Stop log streaming (app keeps running until build succeeds)
 			cleanup()
 
-			// Terminate app
-			_ = r.deviceManager.Terminate(ctx, dev, bundleID)
-
-			// Rebuild
+			// Rebuild (buildCycle will terminate old app after successful build)
 			newAppPath, newBundleID, err := r.buildCycle(ctx, cfg, dev)
 			if err != nil {
 				r.renderer.Error("Rebuild failed: %v", err)
