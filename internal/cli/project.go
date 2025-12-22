@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/asurve/swiftctl/internal/project"
-	"github.com/asurve/swiftctl/internal/ui"
+	"github.com/arnavsurve/swiftctl/internal/project"
+	"github.com/arnavsurve/swiftctl/internal/ui"
 	"github.com/spf13/cobra"
 )
 

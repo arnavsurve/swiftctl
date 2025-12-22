@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/asurve/swiftctl/internal/device"
-	"github.com/asurve/swiftctl/internal/process"
+	"github.com/arnavsurve/swiftctl/internal/device"
+	"github.com/arnavsurve/swiftctl/internal/process"
 )
 
 type Detector struct {
@@ -22,6 +22,7 @@ func NewDetector() *Detector {
 	}
 }
 
+// Detect finds a Swift project in dir. Priority: workspace > xcodeproj > SPM.
 func (d *Detector) Detect(dir string) (*ProjectInfo, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
@@ -182,6 +183,7 @@ func (d *Detector) populateSPMInfo(info *ProjectInfo, dir string) {
 	}
 }
 
+// inferPlatforms guesses platforms from scheme names. Defaults to iOS.
 func (d *Detector) inferPlatforms(schemes []string) []device.Platform {
 	platforms := make(map[device.Platform]bool)
 

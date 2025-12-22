@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/asurve/swiftctl/internal/device"
-	"github.com/asurve/swiftctl/internal/ui"
+	"github.com/arnavsurve/swiftctl/internal/device"
+	"github.com/arnavsurve/swiftctl/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -32,9 +32,9 @@ func devicesCmd() *cobra.Command {
 
 func devicesListCmd() *cobra.Command {
 	var (
-		platform  string
-		booted    bool
-		jsonOut   bool
+		platform string
+		booted   bool
+		jsonOut  bool
 	)
 
 	cmd := &cobra.Command{
@@ -101,7 +101,7 @@ func devicesBootCmd() *cobra.Command {
 				return fmt.Errorf("device not found: %w", err)
 			}
 
-			renderer.StartSpinner(fmt.Sprintf("Booting %s...", dev.Name))
+			renderer.StartSpinner("Booting %s...", dev.Name)
 
 			if err := mgr.Boot(ctx, dev); err != nil {
 				renderer.StopSpinner(false)
@@ -144,7 +144,7 @@ func devicesShutdownCmd() *cobra.Command {
 				return fmt.Errorf("device not found: %w", err)
 			}
 
-			renderer.StartSpinner(fmt.Sprintf("Shutting down %s...", dev.Name))
+			renderer.StartSpinner("Shutting down %s...", dev.Name)
 			if err := mgr.Shutdown(ctx, dev); err != nil {
 				renderer.StopSpinner(false)
 				return fmt.Errorf("failed to shutdown: %w", err)
@@ -278,6 +278,7 @@ func devicesRuntimesCmd() *cobra.Command {
 	return cmd
 }
 
+// resolveDeviceType converts a friendly name to a CoreSimulator identifier.
 func resolveDeviceType(ctx context.Context, mgr *device.Manager, input string) (string, error) {
 	if strings.HasPrefix(input, "com.apple.") {
 		return input, nil
@@ -297,6 +298,7 @@ func resolveDeviceType(ctx context.Context, mgr *device.Manager, input string) (
 	return "", fmt.Errorf("device type not found: %s", input)
 }
 
+// resolveRuntime converts a friendly name to a CoreSimulator identifier.
 func resolveRuntime(ctx context.Context, mgr *device.Manager, input string) (string, error) {
 	if strings.HasPrefix(input, "com.apple.") {
 		return input, nil

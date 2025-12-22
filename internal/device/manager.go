@@ -5,23 +5,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/asurve/swiftctl/internal/process"
+	"github.com/arnavsurve/swiftctl/internal/process"
 	"github.com/tidwall/gjson"
 )
 
-// Manager handles simulator and device operations
 type Manager struct {
 	runner *process.Runner
 }
 
-// NewManager creates a new device Manager
 func NewManager() *Manager {
 	return &Manager{
 		runner: process.NewRunner(),
 	}
 }
 
-// List returns available devices, optionally filtered by platform and state
 func (m *Manager) List(ctx context.Context, platform Platform, onlyBooted bool) ([]*Device, error) {
 	output, err := m.runner.RunSilent(ctx, "xcrun", []string{"simctl", "list", "devices", "-j"})
 	if err != nil {
@@ -63,7 +60,7 @@ func (m *Manager) List(ctx context.Context, platform Platform, onlyBooted bool) 
 	return devices, nil
 }
 
-// Get finds a device by name or UDID
+// Get finds a device by UDID (exact), name (exact, case-insensitive), or name substring.
 func (m *Manager) Get(ctx context.Context, nameOrUDID string) (*Device, error) {
 	devices, err := m.List(ctx, "", false)
 	if err != nil {
@@ -133,6 +130,7 @@ func (m *Manager) Install(ctx context.Context, device *Device, appPath string) e
 	return nil
 }
 
+// Launch starts an app and returns its PID (0 if unknown).
 func (m *Manager) Launch(ctx context.Context, device *Device, bundleID string, args []string) (int, error) {
 	cmdArgs := []string{"simctl", "launch", device.UDID, bundleID}
 	cmdArgs = append(cmdArgs, args...)
@@ -169,10 +167,10 @@ type DeviceTypeInfo struct {
 }
 
 type RuntimeInfo struct {
-	Identifier string
-	Name       string
-	Version    string
-	Platform   Platform
+	Identifier  string
+	Name        string
+	Version     string
+	Platform    Platform
 	IsAvailable bool
 }
 
@@ -217,6 +215,7 @@ func (m *Manager) ListRuntimes(ctx context.Context) ([]RuntimeInfo, error) {
 	return runtimes, nil
 }
 
+// Create makes a new simulator, returning its UDID.
 func (m *Manager) Create(ctx context.Context, name, deviceTypeID, runtimeID string) (string, error) {
 	output, err := m.runner.RunSilent(ctx, "xcrun", []string{"simctl", "create", name, deviceTypeID, runtimeID})
 	if err != nil {

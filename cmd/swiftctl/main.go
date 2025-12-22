@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/asurve/swiftctl/internal/cli"
+	"github.com/arnavsurve/swiftctl/internal/cli"
 )
 
 var version = "dev"

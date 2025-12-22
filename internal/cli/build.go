@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/asurve/swiftctl/internal/build"
-	"github.com/asurve/swiftctl/internal/device"
-	"github.com/asurve/swiftctl/internal/project"
-	"github.com/asurve/swiftctl/internal/ui"
+	"github.com/arnavsurve/swiftctl/internal/build"
+	"github.com/arnavsurve/swiftctl/internal/device"
+	"github.com/arnavsurve/swiftctl/internal/project"
+	"github.com/arnavsurve/swiftctl/internal/ui"
 	"github.com/spf13/cobra"
 )
 

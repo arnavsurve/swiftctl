@@ -1,4 +1,4 @@
-module github.com/asurve/swiftctl
+module github.com/arnavsurve/swiftctl
 
 go 1.25.4
 
