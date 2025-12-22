@@ -253,6 +253,8 @@ func devicesTypesCmd() *cobra.Command {
 }
 
 func devicesRuntimesCmd() *cobra.Command {
+	var platform string
+
 	cmd := &cobra.Command{
 		Use:   "runtimes",
 		Short: "List available runtimes",
@@ -266,6 +268,9 @@ func devicesRuntimesCmd() *cobra.Command {
 			}
 
 			for _, r := range runtimes {
+				if platform != "" && string(r.Platform) != platform {
+					continue
+				}
 				status := ""
 				if !r.IsAvailable {
 					status = " (unavailable)"
@@ -275,6 +280,9 @@ func devicesRuntimesCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&platform, "platform", "p", "", "Filter by platform (ios, watchos, tvos, visionos)")
+
 	return cmd
 }
 
