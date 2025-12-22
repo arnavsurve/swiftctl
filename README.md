@@ -41,6 +41,7 @@ swiftctl run ios -w                        # Watch mode: rebuild on file changes
 swiftctl run ios -s MyScheme               # Specify scheme
 swiftctl run ios -d "iPhone 15 Pro"        # Specify device
 swiftctl run ios -c release                # Release configuration
+swiftctl run ios --args="-debug,-verbose"  # Pass args to app
 ```
 
 ### Build a project
@@ -82,6 +83,7 @@ swiftctl devices delete "My iPhone"
 swiftctl devices types
 swiftctl devices types --platform ios
 swiftctl devices runtimes
+swiftctl devices runtimes --platform ios
 ```
 
 ### View project info
