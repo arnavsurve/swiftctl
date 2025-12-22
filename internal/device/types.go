@@ -1,6 +1,5 @@
 package device
 
-// Platform represents a target platform
 type Platform string
 
 const (
@@ -11,7 +10,6 @@ const (
 	PlatformVisionOS Platform = "visionos"
 )
 
-// DeviceType distinguishes simulators from physical devices
 type DeviceType int
 
 const (
@@ -19,17 +17,15 @@ const (
 	DeviceTypePhysical
 )
 
-// DeviceState represents the current state of a device
 type DeviceState string
 
 const (
-	StateShutdown  DeviceState = "Shutdown"
-	StateBooted    DeviceState = "Booted"
-	StateBooting   DeviceState = "Booting"
+	StateShutdown     DeviceState = "Shutdown"
+	StateBooted       DeviceState = "Booted"
+	StateBooting      DeviceState = "Booting"
 	StateShuttingDown DeviceState = "Shutting Down"
 )
 
-// Device represents a simulator or physical device
 type Device struct {
 	UDID        string      `json:"udid"`
 	Name        string      `json:"name"`

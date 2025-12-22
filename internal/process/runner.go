@@ -27,6 +27,7 @@ func (r *Runner) SetVerbose(v bool) {
 	r.verbose = v
 }
 
+// Run executes a command with streaming output via channels.
 func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan OutputLine, <-chan error) {
 	outChan := make(chan OutputLine, 100)
 	errChan := make(chan error, 1)
@@ -92,6 +93,7 @@ func (r *Runner) Run(ctx context.Context, name string, args []string) (<-chan Ou
 	return outChan, errChan
 }
 
+// RunSilent executes a command and returns stdout. Stderr is included in errors.
 func (r *Runner) RunSilent(ctx context.Context, name string, args []string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
 
@@ -109,6 +111,7 @@ func (r *Runner) RunSilent(ctx context.Context, name string, args []string) ([]b
 	return stdout.Bytes(), nil
 }
 
+// RunJSON executes a command and unmarshals JSON output into v.
 func (r *Runner) RunJSON(ctx context.Context, name string, args []string, v any) error {
 	output, err := r.RunSilent(ctx, name, args)
 	if err != nil {
