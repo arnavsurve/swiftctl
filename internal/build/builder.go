@@ -72,6 +72,10 @@ func NewBuilder(proj *project.ProjectInfo) *Builder {
 
 // Build compiles the project and streams events to the channel (can be nil).
 func (b *Builder) Build(ctx context.Context, cfg Config, events chan<- Event) (*Result, error) {
+	if b.project.Type == project.ProjectTypeSPM {
+		return b.buildSPM(ctx, cfg, events)
+	}
+
 	startTime := time.Now()
 	result := &Result{}
 
@@ -105,6 +109,69 @@ func (b *Builder) Build(ctx context.Context, cfg Config, events chan<- Event) (*
 		if outChan == nil && errChan == nil {
 			break
 		}
+	}
+
+	result.Duration = time.Since(startTime)
+	return result, nil
+}
+
+func (b *Builder) buildSPM(ctx context.Context, cfg Config, events chan<- Event) (*Result, error) {
+	startTime := time.Now()
+	result := &Result{}
+
+	args := []string{"build"}
+	if cfg.Configuration == ConfigRelease {
+		args = append(args, "-c", "release")
+	}
+
+	outChan, errChan := b.runner.Run(ctx, "swift", args)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+
+		case line, ok := <-outChan:
+			if !ok {
+				outChan = nil
+			} else {
+				// Parse swift build output for errors
+				if strings.Contains(line.Content, "error:") {
+					if events != nil {
+						events <- Event{Type: EventError, Message: line.Content}
+					}
+					result.Errors = append(result.Errors, Event{Message: line.Content})
+				} else if strings.Contains(line.Content, "warning:") {
+					if events != nil {
+						events <- Event{Type: EventWarning, Message: line.Content}
+					}
+					result.Warnings = append(result.Warnings, Event{Message: line.Content})
+				} else if strings.Contains(line.Content, "Build complete!") {
+					result.Success = true
+					if events != nil {
+						events <- Event{Type: EventSuccess}
+					}
+				}
+			}
+
+		case err, ok := <-errChan:
+			if !ok {
+				errChan = nil
+			} else if err != nil {
+				result.Success = false
+				result.Duration = time.Since(startTime)
+				return result, fmt.Errorf("build failed: %w", err)
+			}
+		}
+
+		if outChan == nil && errChan == nil {
+			break
+		}
+	}
+
+	// If no explicit success message but no errors, consider it successful
+	if len(result.Errors) == 0 {
+		result.Success = true
 	}
 
 	result.Duration = time.Since(startTime)
